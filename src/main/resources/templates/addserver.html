@@ -1,0 +1,171 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add server</title>
+
+    <!--Ez a validáló script ellen?rzi, hogy a user adott-e meg nevet az újonnan létrehozandó server számára-->
+
+    <script>
+        function validateForm() {
+            var newServerName = document.forms["addserverform"]["serverName"].value;
+            if (newServerName == "") {
+                alert("Server name must be filled out!");
+                return false;
+            }
+            var newServerOS = document.forms["addserverform"]["opSys"].value;
+            if (newServerOS == "") {
+                alert("Server operating system must be filled out!");
+                return false;
+            }
+            var newServerIP = document.forms["addserverform"]["ip"].value;
+            if (newServerIP == "") {
+                alert("Server IP must be filled out!");
+                return false;
+            }
+
+        }
+    </script>
+    <div th:insert="~{fragments/menu :: head}">...</div>
+</head>
+
+<body>
+<div th:insert="~{fragments/menu :: menu}">...</div>
+
+
+<!--A form onsubmit-ja hívja meg a validáló scriptet, ami ellen?rzi, hogy a user adott-e meg nevet az újonnan létrehozandó server számára -->
+<div class="container">
+    <h1>Add new server</h1>
+    <form name="addserverform" onsubmit="return validateForm()" th:action="@{/addserver}" action="/addserver"
+          method="post" modelAttribute="server">
+
+        <div>Server name:</div>
+        <input type="text" class="form.control" placeholder="serverName" name="serverName"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>Operating system:</div>
+        <input type="text" class="form.control" placeholder="opSys" name="opSys"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>CPU:</div>
+        <input type="text" class="form.control" placeholder="cpu" name="cpu"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>Ram:</div>
+        <input type="number" class="form.control" placeholder="ram" name="ram" value="0"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>IP:</div>
+        <input type="text" class="form.control" placeholder="ip" name="ip"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>DB:</div>
+        <input type="text" class="form.control" placeholder="db" name="db"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>File DB:</div>
+        <input type="text" class="form.control" placeholder="fileDb" name="fileDb"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>I-fleet web:</div>
+        <input type="text" class="form.control" placeholder="ifleetWeb" name="ifleetWeb"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <!--<div>Description:</div>-->
+        <!--<input type="text" class="form.control" placeholder="description" name="description"/>-->
+        <!--<div style="clear: both; display: block; height: 10px" th:width="100"></div>-->
+
+        <div>Description:</div>
+        <div id='editormd-desc'>
+            <textarea name="description" style="display:none;"></textarea>
+        </div>
+        <script src="/js/editormd.min.js"></script>
+        <script type="text/javascript">
+
+            $(function () {
+                var testEditor;
+                testEditor = editormd("editormd-desc", {
+                    width: "100%",
+                    height: 600,
+                    emoji: true,
+                    path: "/lib/"
+                });
+
+                editormd.loadScript("/languages/en", function () {
+                    testEditor.lang = editormd.defaults.lang;
+                    testEditor.recreate();
+                })
+            });
+        </script>
+
+
+        <div>External IP:</div>
+        <input type="checkbox" class="form.control" placeholder="externalIP" name="externalIP"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <!--<div>Service:</div>-->
+        <!--<div class="col-lg-3"  th:object="${server}">-->
+        <!--<select class="form-control" name="service">-->
+        <!--<option value="">Select service</option>-->
+        <!--<option th:each="service : ${serviceListInModel}"-->
+        <!--th:value="${service}"-->
+        <!--th:text="${service.serviceName}"></option>-->
+        <!--</select>-->
+        <!--</div>-->
+
+        <!--*********************************************************************************************************************************************************-->
+
+        <div class="container">
+
+            <div class="row">
+                <div class="col-md-4">
+                    <select name="from" th:id="'lstview' " class="form-control" size="8" multiple="multiple">
+
+                        <div th:each="service : ${serviceListInModel}">
+                            <option th:value="${service.serviceId}"><span th:text="${service.serviceName}"></span>
+                            </option>
+                        </div>
+
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <!--<button type="button" id="lstview_undo" class="btn btn-danger btn-block">undo</button>-->
+                    <button type="button" th:id="lstview_rightAll" class="btn btn-default btn-block"><i
+                            class="glyphicon glyphicon-forward"></i>add all
+                    </button>
+                    <button type="button" th:id="lstview_rightSelected" class="btn btn-default btn-block"><i
+                            class="glyphicon glyphicon-chevron-right">add selected</i></button>
+                    <button type="button" th:id="lstview_leftSelected" class="btn btn-default btn-block"><i
+                            class="glyphicon glyphicon-chevron-left">remove selected</i></button>
+                    <button type="button" th:id="lstview_leftAll" class="btn btn-default btn-block"><i
+                            class="glyphicon glyphicon-backward"></i>remove all
+                    </button>
+                    <!--<button type="button" id="lstview_redo" class="btn btn-warning btn-block">redo</button>-->
+                </div>
+
+                <div class="col-md-4">
+                    <select name="serviceList" th:id="lstview_to" class="form-control" size="8" multiple="multiple">
+
+                    </select>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+
+            jQuery(document).ready(function ($) {
+                $('#lstview').multiselect({
+                    search: {
+
+                        left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                        right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                    }
+                });
+            });
+        </script>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancel" data-dismiss="modal" onclick="javascript:window.location='../editserver'">Cancel</button>
+            <button type="submit" class="btn btn-primary" value="save" name="editServerSaveBtn">Save</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

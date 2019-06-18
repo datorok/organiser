@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+
+    <!--Ez az oldal felelős a létező service-ek megjelenítéséért-->
+
+    <title>Edit service</title>
+
+<!--Itt hívjuk meg a menu.html oldal head részét, ami az oldal helyes megjelenítéséhez és működéséhez szükséges importálásokat valamint az aktuális
+menüelemet aktívnak jelölő script-et tartalmazza-->
+
+    <div th:insert="~{fragments/menu :: head}">...</div>
+</head>
+<body>
+
+<!--Itt hívjuk meg a menu.html oldal menu részét, ami az alkalmazás menüjét tartalmazza-->
+
+<div th:insert="~{fragments/menu :: menu}">...</div>
+
+
+<!--
+Ez a menü alatti search bar és a működéséért felelős script, amely a name, url és port oszlopokban keres rá a megadott szövegrészletre
+onkeyup="searchFunction()" - minden billentyűfelengedésre meghívja a searchFunction() nevű function-t
+placeholder="Search for service.." - ez a halványszürke és felülírható szöveg fog megjelenni a search bar-ban
+-->
+
+<input type="text" id="serviceSearchInput" onkeyup="searchFunction()" placeholder="Search for service.." title="Type in a service">
+
+<!--
+A search bar script-jében létrehozzuk az alábbi változókat:
+input - a search bar-ba beírt szöveg
+filter - upperCase-re konvertált input
+table - a serviceTable teljes tartalma
+tr - egy lista, ami tartalmazza a table tr típusú element-jeit
+
+-->
+
+<script>
+    function searchFunction() {
+        var input, filter, table, tr, i, txtValue;
+        input = document.getElementById("serviceSearchInput");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("serviceTable");
+        tr = table.getElementsByTagName("tr");
+
+        // Végigiterálunk a tr List elemein, és minden egyes iteráció során létrehozunk 3 változót:
+        // sname - serviceName, vagyis az sname class-ba tartozó elem adott iterációban felvett értéke
+        // sport - url, vagyis az surl class-ba tartozó elem adott iterációban felvett értéke
+        // surl - port, vagyis az sport class-ba tartozó elem adott iterációban felvett értéke
+        // Amennyiben az adott iteráción belül ezen változók bármelyike is létezik (a serviceName mindig létezni fog, hiszen annak megadása nélkül nem menthet el a user új service-t), akkor
+        // létrehozunk 3 újabb változót (txtValue1, txtValue2, txtValue3) ezek értékeivel (textContent / innerText) és megvizsgáljuk, hogy ezek közül ha bármelyiket is upperCase()-re konvertáljuk,
+        // akkor tartalmazni fogják-e a user által a search bar-ba beírt kifejezés szintén upperCase()-re konvertált változatát, amit filter néven mentettünk el.
+        // Amennyiben találunk egyezést, úgy az adott eleme(ke)t továbbra is megjelenítjük, a többi elemet viszont elrejtjük.
+
+
+        for (i = 0; i < tr.length; i++) {
+            var sname = tr[i].getElementsByClassName("sname")[0];
+            var sport = tr[i].getElementsByClassName("sport")[0];
+            var surl = tr[i].getElementsByClassName("surl")[0];
+
+            if (sname || sport || surl) {
+                var txtValue1 = sname.textContent || sname.innerText;
+                var txtValue2 = sport.textContent || sport.innerText;
+                var txtValue3 = surl.textContent || surl.innerText;
+
+                if (txtValue1.toUpperCase().indexOf(filter) > -1 || txtValue2.toUpperCase().indexOf(filter) > -1 || txtValue3.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+</script>
+
+<!--
+Ebben a table-ben jelenítjük meg a már létrehozott service-ek adatait
+Ezek egy részét (name, port, url) közvetlenül megjelenítjük a html oldalon, egy másik részüket (description, serverlist) viszont modal megnyitásáért felelős button-ként ábrázoljuk. Ennek megfelelően
+ez utóbbi csoportba tartozó infók csak akkor lesznek láthatóak, ha a user ráclick-kel a hozzájuk rendelt gombra, és felugrik egy pop-up ablak.
+A modal generálásához bootstrap-et alkalmaztunk.
+
+-->
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-block">
+            <table class="table table-hover" id="serviceTable">
+                <thead>
+                <tr>
+                    <th>Service name</th>
+                    <th>URL</th>
+                    <th>Port</th>
+                    <th>Description</th>
+                    <th>List of servers</th>
+                    <th>Edit service</th>
+                    <th>Delete service</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="service :${servicedata}">
+
+                    <!--Ezekre a class elnevezésekre a search bar használata miatt van szükség-->
+                    <td class="sname" th:text="${service.serviceName}"></td>
+                    <td class="surl" th:text="${service.url}"></td>
+                    <td class="sport" th:text="${service.port}"></td>
+                    <!--Az itt következő oszlopokban található adatok nem közvetlenül jelennek meg a html-oldalon, hanem egy modal-ban (pop-up ablakban) lesznek láthatóak a hozzájuk tartozó gombok
+                    megnyomását követően. Itt csak a gombok létrehozása és class-szal való ellátása történik meg, a meghívás később kerül bemutatásra
+                    -->
+
+                    <td>
+                        <div class="">
+                            <button type="button" class="btn btn-primary mdServiceBtn" data-toggle="modal"
+                                    th:data-target="'#mdServiceModal' + ${service.serviceId}">Description
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="">
+                            <button type="button" class="btn btn-primary serversServiceBtn" data-toggle="modal"
+                                    th:data-target="'#serversServiceModal' + ${service.serviceId}">Servers
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="">
+                            <button type="button" class="btn btn-primary editServiceBtn" data-toggle="modal"
+                                    th:data-target="'#editServiceModal' + ${service.serviceId}">Edit
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="">
+                            <button type="button" class="btn btn-danger deleteServiceBtn" data-toggle="modal"
+                                    th:data-target="'#deleteServiceModal' + ${service.serviceId}">Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <!--Itt jelenítjük meg a page number-eket, de mivel az oldalakra történő szétbontás megnehezítené a keresést, így használatukat mellőzzük, így minden a 0. oldalon jelenik meg.-->
+
+            <hr/>
+            <ul class="nav nav-pills">
+                <li class="nav-item"
+                    th:each="i : ${ #numbers.sequence(0,(pageSize))}">
+                    <a th:href="@{/editservice/(page=${i})}" th:text="${i}" class="nav-link"
+                       th:classappend="${currentPage == i}? 'active': ''"></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!--
+Itt vannak az fent létrehozott gombokhoz tartozó egyes modal-ok. A Modal-ok fő jellemzőo:
+- Egyszerre csak egy lehet belőlük nyitva
+- Nem lehetnek beágyazottak
+- 3 részre tagolódnak: header; body; footer
+- Érdemes rájuk close gombot tenni, de ha a user a területükön kívülre klikkel, akkor is bezáródnak
+Ezen a html oldalon 4 olyan gomb van, amellyel valamilyen Modal megnyitható. Ezek a Modal-ok a következők:
+- serversServiceModal
+- mdServiceModal
+- editServiceModal
+- deleteServiceModal
+
+Jelen esetben mindegyik Modal azzal kezdődik, hogy egy for ciklussal bejárjuk a ServiceController-től kapott, és a Model által áthozott servicedata list-et, ami a már létező service-eket tartalmazza
+Mivel minden sorban van egy olyan gomb, ami megnyit egy Modal-t, így a sikeres perzisztencia miatt meg kell oldani, hogy az egyes Modal-oknak egyedi id-jai legyenek, ezért adjuk hozzá az adott
+serviceId-t.
+-->
+
+<div th:each="service : ${servicedata}">
+    <div class="modal curtain" th:id="'serversServiceModal' + ${service.serviceId}" tabindex="-1" role="dialog"
+         aria-labelledby="serversServiceModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Servers running the <span th:text="${service.serviceName}"></span> service
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <p th:each="server : ${service.getServerList()}">
+                            <a th:href="@{'/server/' + ${server.serverName}}"><span
+                                    th:text="${server.serverName}"></span></a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:each="service : ${servicedata}">
+    <div class="modal curtain" th:id="'mdServiceModal' + ${service.serviceId}" tabindex="-1" role="dialog"
+         aria-labelledby="mdServiceModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Service description in HTML</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div th:id="'test-editormd-view' + ${service.serviceId}">
+                        <textarea id="append-test" style="display:none;">[[${service.description}]]</textarea>
+                        <script type="text/javascript">
+                            $('#mdServiceModal[[${service.serviceId}]]').on('shown.bs.modal', function () {
+                                testEditormdView = editormd.markdownToHTML("test-editormd-view[[${service.serviceId}]]", {
+                                    htmlDecode: "style,script,iframe",
+                                    tocm: true,
+                                    emoji: true,
+                                    taskList: true,
+                                    tex: true,
+                                    flowChart: true,
+                                    sequenceDiagram: true
+                                });
+                            });
+                        </script>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:each="service : ${servicedata}">
+    <div class="modal curtain" th:id="'editServiceModal' + ${service.serviceId}" tabindex="-1" role="dialog"
+         aria-labelledby="editServiceModalLabel"
+         aria-hidden="true">
+        <form th:action="@{/editservice}" method="post" modelAttribute="service">
+            <div class="modal-dialog" style="max-width: 90%" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editServiceModalLabel">Please modify the affected data!</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" class="form-control" id="serviceId" name="serviceId"
+                               th:value="${service.serviceId}">
+                        <div class="form-group">
+                            <label for="serviceName" class="form-control-label">Service name:</label>
+                            <input type="text" class="form-control" id="serviceName" name="serviceName"
+                                   th:value="${service.serviceName}">
+                        </div>
+                        <div class="form-group">
+                            <label for="url" class="form-control-label">URL:</label>
+                            <input type="text" class="form-control" id="url" name="url" th:value="${service.url}">
+                        </div>
+                        <div class="form-group">
+                            <label for="port" class="form-control-label">Port:</label>
+                            <input type="text" class="form-control" id="port" name="port"
+                                   th:value="${service.port}">
+                        </div>
+                        <div th:id="'editormd-desc' + ${service.serviceId}">
+                            <textarea name="description" style="display:none;">[[${service.description}]]</textarea>
+                        </div>
+                        <script type="text/javascript">
+                            $('#editServiceModal[[${service.serviceId}]]').on('shown.bs.modal', function (e) {
+                                testEditor = editormd("editormd-desc" + [[${service.serviceId}]], {
+                                    width: "100%",
+                                    height: 600,
+                                    emoji: true,
+                                    path: "/lib/"
+                                });
+                                editormd.loadScript("/languages/en", function () {
+                                    testEditor.lang = editormd.defaults.lang;
+                                    testEditor.recreate();
+                                })
+                            });
+                        </script>
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <select name="from" th:id="'lstview' + ${service.serviceId}" class="form-control"
+                                            size="8" multiple="multiple">
+                                        <div th:each="server : ${serverdata}">
+                                            <option th:value="${server.serverId}"><span
+                                                    th:text="${server.serverName}"></span></option>
+                                        </div>
+
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <!--<button type="button" id="lstview_undo" class="btn btn-danger btn-block">undo</button>-->
+                                    <button type="button" th:id="'lstview' + ${service.serviceId} + '_rightAll'"
+                                            class="btn btn-default btn-block"><i
+                                            class="glyphicon glyphicon-forward"></i>add all
+                                    </button>
+                                    <button type="button" th:id="'lstview' + ${service.serviceId} + '_rightSelected'"
+                                            class="btn btn-default btn-block"><i
+                                            class="glyphicon glyphicon-chevron-right">add selected</i></button>
+                                    <button type="button" th:id="'lstview' + ${service.serviceId} + '_leftSelected'"
+                                            class="btn btn-default btn-block"><i
+                                            class="glyphicon glyphicon-chevron-left">remove selected</i></button>
+                                    <button type="button" th:id="'lstview' + ${service.serviceId} + '_leftAll'"
+                                            class="btn btn-default btn-block"><i
+                                            class="glyphicon glyphicon-backward"></i>remove all
+                                    </button>
+                                </div>
+                                <div class="col-md-4">
+                                    <select name="serverList" th:id="'lstview' + ${service.serviceId} + '_to'"
+                                            class="form-control" size="8" multiple="multiple">
+                                        <div th:each="server : ${service.getServerList()}">
+                                            <option th:value="${server.serverId}"><span
+                                                    th:text="${server.serverName}"></span></option>
+                                        </div>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <script type="text/javascript">
+                            $('#editServiceModal[[${service.serviceId}]]').on('shown.bs.modal', function () {
+                                $('#lstview[[${service.serviceId}]]').multiselect({
+                                    enableCaseInsensitiveFiltering: true,
+                                    search: {
+                                        left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                                        right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                                    }
+                                });
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" value="save">Save</button>
+            </div>
+        </form>
+    </div>
+    <div class="modal curtain" th:id="'deleteServiceModal' + ${service.serviceId}" tabindex="-1" role="dialog"
+         aria-labelledby="deleteServiceModalLabel"
+         aria-hidden="true">
+        <form th:action="@{/deleteservice}" method="post">
+            <input type="hidden" class="form-control" name="serviceId"
+                   th:value="${service.serviceId}">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteServiceModalLabel">Modal title</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="alert alert-danger">
+                            Are you sure, that you want to delete this service?
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger" value="delete">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

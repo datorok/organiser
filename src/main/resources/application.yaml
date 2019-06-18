@@ -1,0 +1,17 @@
+server:
+  port: 2966
+
+spring:
+
+  datasource:
+    url : jdbc:mysql://10.1.1.134:3306/servicesAndServers?useSSL=false&allowPublicKeyRetrieval=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+    username : organiser
+    password : organiser
+
+  jpa:
+    hibernate.ddl-auto: update
+    database: mysql
+
+
+
+

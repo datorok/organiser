@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-16">
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!--A menü html oldalt két részre bontjuk a th:fragment segítségével: a head részben lesznek az importjaink, a menu részben pedig az ablakok közötti navigációt szolgáló menü. Ezeket a részeket a
+    th:insert segítégével tudjuk meghívni a megfelelõ helyen:
+
+     <div th:insert="~{fragments/menu :: head}">...</div>
+     <div th:insert="~{fragments/menu :: menu}">...</div>-->
+
+<head>
+    <div th:fragment="head">
+        <meta charset="ISO-8859-1">
+        <link rel=StyleSheet href="/css/style.css" type="text/css" media=screen>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+        <script src="/js/editormd.min.js"></script>
+        <script src="/lib/marked.min.js"></script>
+        <script src="/lib/prettify.min.js"></script>
+        <script src="/lib/raphael.min.js"></script>
+        <script src="/lib/underscore.min.js"></script>
+        <script src="/lib/sequence-diagram.min.js"></script>
+        <script src="/lib/flowchart.min.js"></script>
+        <script src="/lib/jquery.flowchart.min.js"></script>
+        <script src="/js/multiselect.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+        <!--<link rel="stylesheet" href="/css/style.css" />-->
+        <link rel="stylesheet" href="/css/editormd.css" />
+        <script>
+            var testEditormdView;
+            var testEditor;
+
+           // Ez a script teszi aktívvá (zölddel kijelöltté) a menüben annak a menüpontnak a nevét, amit a user éppen vizitál.
+           // Az elején azért áll $ karakter, mert ez egy jQuery függvény (a jQuery a JavaScript egyik könyvtára/framework-je, melynek használata megkönnyíti a JS-ben történ? kódolást).
+           // A $ karakter a $(document).ready rövidített formája, ennek a használata garantálja, hogy csak akkor kerüljön meghívásra a függvény, ha a html DOM minden eleme betölt?dött már.
+           // Ez a függvény egy for each-csel végig iterál a menuitem class elemein, és egy tempPathName nev? változónak értéket ad. A konkrét érték attól függ, hogy az adott window location-nek a pathname-jének
+           // az utolsó karaktere az "/" karakter-e. Amnennyiben igen, akkor a tempPathName változó értékéhez hozzáadjuk a  "/" karaktert, ellenkez? esetben pedig nem.
+           //
+           // Amennyiben az adott menuitem értékében és típusában (===) is megegyezik a tempPathName változó értékével, akkor az adott menuitem-hez és a parent-jeihez hozzárendeljük az
+           // "active" class-t.
+
+
+            $(function () {
+                $('a.menuitem').each(function () {
+                    var tempPathName = window.location.pathname[window.location.pathname.length - 1] !== '/' ? window.location.pathname + '/' : window.location.pathname
+                    if ($(this).prop('href') === window.location.origin + tempPathName) {
+                        $(this).addClass('active');
+                        $(this).parents('li').addClass('active');
+                    }
+                });
+            });
+        </script>
+    </div>
+</head>
+<body>
+<div th:fragment="menu">
+    <style>
+
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            border: 1px solid #e7e7e7;
+            background-color: #f3f3f3;
+        }
+
+        li {
+            float: left;
+        }
+
+        li a {
+            display: block;
+            color: #666;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        li a:hover:not(.active) {
+            background-color: #ddd;
+        }
+
+        li a.active {
+            color: white;
+            background-color: #4CAF50;
+        }
+    </style>
+
+    <!--Ez az a menüsor, ami minden oldal tetején megjelenítésre kerül linkek formájában. A menüsor elemei linkek (rájuk klikkelve a user át tud lépni a megfelel? menüpontba), továbbá az éppen
+    aktív (user által vizitált) menüpont jelölve van-->
+    <ul>
+
+        <li><a class="menuitem" href="/editserver/">Server list</a></li>
+        <li><a class="menuitem" href="/editservice/">Service list</a></li>
+        <li><a class="menuitem" href="/editreserved/">Reserved port list</a></li>
+        <li><a class="menuitem" href="/addserver/">Add server</a></li>
+        <li><a class="menuitem" href="/addservice/">Add service</a></li>
+        <li><a class="menuitem" href="/addreserved/">Add reserved port</a></li>
+
+    </ul>
+</div>
+
+</body>
+</html>

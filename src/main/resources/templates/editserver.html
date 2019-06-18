@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<!-- https://www.youtube.com/watch?v=lIgFe20dYq4 -->
+<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Edit server</title>
+    <div th:insert="~{fragments/menu :: head}">...</div>
+</head>
+<body>
+<!--Itt illesztjük be a menu.htm file-ban megírt menüt ennek a weblap-nak a fejlécébe-->
+<div th:insert="~{fragments/menu :: menu}">...</div>
+<input type="text" id="serverSearchInput" onkeyup="searchFunction()"
+       placeholder="Search for servers.." title="Type in a server">
+<script>
+    function searchFunction() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("serverSearchInput");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("serverTable");
+        tr = table.getElementsByTagName("tr");
+        for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+</script>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-block">
+            <table class="table table-hover" id="serverTable">
+                <thead>
+                <tr class="header">
+                    <th>Server name</th>
+                    <th>Operating system</th>
+                    <th>CPU</th>
+                    <th>RAM</th>
+                    <th>IP</th>
+                    <th>Database</th>
+                    <th>File DB</th>
+                    <th>I-fleet Web</th>
+                    <th>Description</th>
+                    <th>URL</th>
+                    <th>External IP</th>
+                    <th>List of services</th>
+                    <th>Edit server</th>
+                    <th>Delete server</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="server :${serverdata}">
+                    <td th:text="${server.serverName}"></td>
+                    <td th:text="${server.opSys}"></td>
+                    <td th:text="${server.cpu}"></td>
+                    <td th:text="${server.ram}"></td>
+                    <td th:text="${server.ip}"></td>
+                    <td th:text="${server.db}"></td>
+                    <td th:text="${server.fileDb}"></td>
+                    <td th:text="${server.ifleetWeb}"></td>
+                    <td>
+                        <div class="">
+                            <button type="button" class="btn btn-primary mdServerBtn" data-toggle="modal"
+                                    th:data-target="'#mdServerModal' + ${server.serverId}">Description
+                            </button>
+                        </div>
+                    </td>
+                    <td th:text="${server.url}"></td>
+                    <td th:text="${server.externalIP}"></td>
+                    <td>
+                        <div class="">
+                            <button type="button" class="btn btn-primary servicesServerBtn" data-toggle="modal"
+                                    th:data-target="'#servicesServerModal' + ${server.serverId}">Services
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="">
+                            <button type="button" class="btn btn-primary editServerBtn" data-toggle="modal"
+                                    th:data-target="'#editServerModal' + ${server.serverId}">Edit
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="">
+                            <button type="button" class="btn btn-danger deleteServerBtn" data-toggle="modal"
+                                    th:data-target="'#deleteServerModal' + ${server.serverId}">Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <hr/>
+            <ul class="nav nav-pills">
+                <li class="nav-item"
+
+                    th:each="i : ${#numbers.sequence(0,(pageSize))}">
+                    <a th:href="@{/editserver/(page=${i})}" th:text="${i}" class="nav-link"
+                       th:classappend="${currentPage == i}? 'active': ''"></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<!--this part is responsible for the md view-->
+<div th:each="server : ${serverdata}">
+    <div class="modal curtain" th:id="'mdServerModal' + ${server.serverId}" tabindex="-1" role="dialog"
+         aria-labelledby="mdServerModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Server description in HTML</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div th:id="'test-editormd-view' + ${server.serverId}">
+                        <textarea id="append-test" style="display:none;">[[${server.description}]]</textarea>
+                        <script type="text/javascript">
+                            $('#mdServerModal[[${server.serverId}]]').on('shown.bs.modal', function () {
+                                testEditormdView = editormd.markdownToHTML("test-editormd-view[[${server.serverId}]]", {
+                                    htmlDecode: "style,script,iframe",
+                                    tocm: true,
+                                    emoji: true,
+                                    taskList: true,
+                                    tex: true,
+                                    flowChart: true,
+                                    sequenceDiagram: true
+                                });
+                            });
+                        </script>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:each="server : ${serverdata}">
+    <div class="modal curtain" th:id="'servicesServerModal' + ${server.serverId}" tabindex="-1" role="dialog"
+         aria-labelledby="servicesServerModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Services run by <span th:text="${server.serverName}"></span></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <p th:each="service : ${server.getServiceList()}">
+                            <a th:href="@{'/service/'+${service.serviceName}}"><span
+                                    th:text="${service.serviceName}"></span></a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:each="server : ${serverdata}">
+    <div class="modal curtain" th:id="'editServerModal' + ${server.serverId}" tabindex="-1" role="dialog"
+         aria-labelledby="editServerModalLabel"
+         aria-hidden="true">
+        <form th:action="@{/editserver}" method="post" modelAttribute="server">
+            <div class="modal-dialog" style="max-width: 90%" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editServerModalLabel">Please modify the affected data!</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Ez a hidden input type teszi lehet?vé, hogy az editált serverobjektum adatbázisbeli id-ját is továbbadjuk
+                        ha ez nem történne meg, minden (már létez? server) módosítása helyett új rekord születne új id-val -->
+                        <input type="hidden" class="form-control" id="serverId" name="serverId"
+                               th:value="${server.serverId}">
+
+                        <div class="form-group">
+                            <label for="serverName" class="form-control-label">Server name:</label>
+                            <input type="text" class="form-control" id="serverName" name="serverName"
+                                   th:value="${server.serverName}">
+                        </div>
+                        <div class="form-group">
+                            <label for="opSys" class="form-control-label">Operating system:</label>
+                            <input type="text" class="form-control" id="opSys" name="opSys"
+                                   th:value="${server.opSys}">
+                        </div>
+                        <div class="form-group">
+                            <label for="cpu" class="form-control-label">CPU:</label>
+                            <input type="text" class="form-control" id="cpu" name="cpu"
+                                   th:value="${server.cpu}">
+                        </div>
+                        <div class="form-group">
+                            <label for="ram" class="form-control-label">RAM:</label>
+                            <input type="text" class="form-control" id="ram" name="ram"
+                                   th:value="${server.ram}">
+                        </div>
+                        <div class="form-group">
+                            <label for="ip" class="form-control-label">IP:</label>
+                            <input type="text" class="form-control" id="ip" name="ip" th:value="${server.ip}">
+                        </div>
+                        <div class="form-group">
+                            <label for="db" class="form-control-label">DB:</label>
+                            <input type="text" class="form-control" id="db" name="db" th:value="${server.db}">
+                        </div>
+                        <div class="form-group">
+                            <label for="fileDb" class="form-control-label">File DB:</label>
+                            <input type="text" class="form-control" id="fileDb" name="fileDb"
+                                   th:value="${server.fileDb}">
+                        </div>
+                        <div class="form-group">
+                            <label for="ifleetWeb" class="form-control-label">I-fleet Web:</label>
+                            <input type="text" class="form-control" id="ifleetWeb" name="ifleetWeb"
+                                   th:value="${server.ifleetWeb}">
+                        </div>
+                        <!--Itt adjuk hozzá az editálási lehetõségekhez a mark down editort-->
+                        <div th:id="'editormd-desc' + ${server.serverId}">
+                            <!--Meghívjuk a korábbi server description-t, hogy megjelenjen és szerkeszthetõvé váljon-->
+                            <textarea name="description"
+                                      style="display:none;">[[${server.description}]]</textarea>
+                        </div>
+                        <script type="text/javascript">
+                            $('#editServerModal[[${server.serverId}]]').on('shown.bs.modal', function (e) {
+                                testEditor = editormd("editormd-desc" + [[${server.serverId}]], {
+                                    width: "100%",
+                                    height: 600,
+                                    emoji: true,
+                                    path: "/lib/"
+                                });
+                                editormd.loadScript("/languages/en", function () {
+                                    testEditor.lang = editormd.defaults.lang;
+                                    testEditor.recreate();
+                                })
+                            });
+                        </script>
+                        <div class="form-group">
+                            <label for="url" class="form-control-label">URL:</label>
+                            <input type="text" class="form-control" id="url" name="url"
+                                   th:value="${server.url}">
+                        </div>
+                        <div class="form-group">
+                            <label for="externalIP" class="form-control-label">External IP:</label>
+                            <input type="text" class="form-control" id="externalIP" name="externalIP"
+                                   th:value="${server.externalIP}">
+                        </div>
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <select name="from" th:id="'lstview' + ${server.serverId}" class="form-control"
+                                            size="8" multiple="multiple">
+                                        <div th:each="service : ${servicedata}">
+                                            <option th:value="${service.serviceId}"><span
+                                                    th:text="${service.serviceName}"></span></option>
+                                        </div>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <!--<button type="button" id="lstview_undo" class="btn btn-danger btn-block">undo</button>-->
+                                    <button type="button" th:id="'lstview' + ${server.serverId} + '_rightAll'"
+                                            class="btn btn-default btn-block"><i
+                                            class="glyphicon glyphicon-forward"></i>add all
+                                    </button>
+                                    <button type="button" th:id="'lstview' + ${server.serverId} + '_rightSelected'"
+                                            class="btn btn-default btn-block"><i
+                                            class="glyphicon glyphicon-chevron-right">add selected</i></button>
+                                    <button type="button" th:id="'lstview' + ${server.serverId} + '_leftSelected'"
+                                            class="btn btn-default btn-block"><i
+                                            class="glyphicon glyphicon-chevron-left">remove selected</i></button>
+                                    <button type="button" th:id="'lstview' + ${server.serverId} + '_leftAll'"
+                                            class="btn btn-default btn-block"><i
+                                            class="glyphicon glyphicon-backward"></i>remove all
+                                    </button>
+                                    <!--<button type="button" id="lstview_redo" class="btn btn-warning btn-block">redo</button>-->
+                                </div>
+                                <div class="col-md-4">
+                                    <select name="serviceList" th:id="'lstview' + ${server.serverId} + '_to'"
+                                            class="form-control" size="8" multiple="multiple">
+                                        <div th:each="service : ${server.getServiceList()}">
+                                            <option th:value="${service.serviceId}"><span
+                                                    th:text="${service.serviceName}"></span></option>
+                                        </div>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <script type="text/javascript">
+                            $('#editServerModal[[${server.serverId}]]').on('shown.bs.modal', function () {
+                                $('#lstview[[${server.serverId}]]').multiselect({
+                                    enableCaseInsensitiveFiltering: true,
+                                    search: {
+                                        left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                                        right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                                    }
+                                });
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" value="save" name="editServerSaveBtn">Save</button>
+            </div>
+        </form>
+    </div>
+    <div class="modal curtain" th:id="'deleteServerModal' + ${server.serverId}" tabindex="-1" role="dialog"
+         aria-labelledby="deleteServerModalLabel"
+         aria-hidden="true">
+        <form th:action="@{/deleteserver}" method="post">
+            <input type="hidden" class="form-control" name="serverId"
+                   th:value="${server.serverId}">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteServerModalLabel">Modal title</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="alert alert-danger">
+                            Are you sure, that you want to delete this server?
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger" value="delete">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

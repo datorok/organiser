@@ -1,0 +1,41 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add reserved port number</title>
+
+    <script>
+        function validateForm() {
+            var x = document.forms["addreservedform"]["portNumber"].value;
+            if (x == "") {
+                alert("Port number must be filled out!");
+                return false;
+            }
+        }
+    </script>
+    <div th:insert="~{fragments/menu :: head}">...</div>
+
+</head>
+
+<body>
+
+<div th:insert="~{fragments/menu :: menu}">...</div>
+
+
+<div class="container">
+
+    <h1>Add new reserved port number</h1>
+
+    <form name="addreservedform" onsubmit="return validateForm()" th:action="@{/addreserved}" action ="/addreserved" method="post" modelAttribute="reserved">
+
+        <div>Port number:</div>
+        <input type="text"  class ="form.control" placeholder="portNumber" name="portNumber"/>
+        <div style = "clear: both; display: block; height: 10px"></div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="javascript:window.location='../editreserved'">Cancel</button>
+            <button type="submit" class="btn btn-primary" value="save" name="addReservedSaveBtn">Save</button>
+        </div>
+
+    </form>
+</div>
+</body>
+</html>

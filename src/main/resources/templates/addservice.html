@@ -1,0 +1,176 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+
+    <!--Ez az oldal felelős az új service létrehozásához szükséges adatok bekéréséért
+        Az oldal tartalmaz html, css, JS, jQuery és Tymeleaf kódot is. A Thymeleaf-ra azért van szükség, mert a html csak statikus weboldal generálásához elég, bármiféle adatkezelési dinamikához
+        (Model által áthozott adatok kezeléséhez és a user által manipulált adatok perzisztálásához) már már kevés. Ezért van az, hogy minden olyan esetben, amikor valamilyen irányú adatmozgás
+        történik, Thymeleaf-et használunk, nélküle javascript-ben kellene megírni ezt a dinamikát.
+    -->
+    <title>Add service</title>
+
+    <!--Ez a script ellenőrzi, hogy a html oldal által megjelenített form (addserviceform) elmentése előtt adott-e meg a felhasználó service name-et.
+    Amennyiben ez nem történt meg, akkor az oldal alert-et dob, és nem menti el az adatokat.-->
+    <script>
+        function validateForm() {
+            var x = document.forms["addserviceform"]["serviceName"].value;
+            if (x == "") {
+                alert("Service name must be filled out!");
+                return false;
+            }
+        }
+    </script>
+    <!--Itt hívjuk meg a menu.html oldal head részét, ami az oldal helyes megjelenítéséhez és működéséhez szükséges importálásokat valamint az aktuális
+    menüelemet aktívnak jelölő script-et tartalmazza-->
+
+    <div th:insert="~{fragments/menu :: head}">...</div>
+
+</head>
+<body>
+
+<!--Itt hívjuk meg a menu.html oldal menu részét, ami az alkalmazás menüjét tartalmazza-->
+
+<div th:insert="~{fragments/menu :: menu}">...</div>
+
+<!--Itt kezdődik az a container, ami az oldal elsődleges funkciójának számító form megjelenítéséért felelős. Ennek a form-nak a segítségével adhatja meg a user az új oldal
+létrehozásához szükséges adatokat-->
+
+<div class="container">
+    <h1>Add new service</h1>
+    <!--
+    onsubmit="return validateForm()" - meghívja a validálásért felelős script-et (validateForm())
+    th:action="@{/addservice}" -
+    action="/addservice" -
+    method="post" - a ServiceController addService metódusának PostMapping annotációval ellátott verzióját hívja meg, ami elvégzi a mentést, és redirektálja a usert az /editservice oldalra
+                    a get-tel szemben a post előnye, hogy nem jeleníti meg az URL-ben az subbmit-ált adatokat
+
+     -->
+
+    <form name="addserviceform" onsubmit="return validateForm()" th:action="@{/addservice}" action="/addservice"
+          method="post" modelAttribute="service">
+
+        <!--
+        input type - ezzel határozzuk meg, hogy milyen adat bevitelét várjuk el (submit, radio, text)
+        placeholder - világoszürkén megjelenő felülírható kezdőérték, ami megjelenik a form adott field-jében
+        name - a form minden egyes field-jének saját neve kell, hogy legyen, mert anelkül az ott rögzített adatok nem kerülnek majd mentésre
+        value - ez a felülírható kezdőérték, ami megjelenik a form adott field-jében
+
+
+        placeholder - világoszürkén megjelenő felülírható
+        -->
+
+        <div>Service name:</div>
+        <input type="text" class="form.control" placeholder="serviceName" name="serviceName"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>URL:</div>
+        <input type="text" class="form.control" placeholder="url" name="url"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>Port:</div>
+        <input type="text" class="form.control" placeholder="port" name="port"/>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <div>Suggested free port:</div>
+        <p th:text="${suggestedport}"></p>
+        <div style="clear: both; display: block; height: 10px"></div>
+
+        <!--Itt hívjuk meg az md editort:-->
+
+        <div>Description:</div>
+        <div id='editormd-desc'>
+            <textarea name="description" style="display:none;"></textarea>
+        </div>
+        <script src="/js/editormd.min.js"></script>
+        <script type="text/javascript">
+
+            $(function () {
+                var testEditor;
+                testEditor = editormd("editormd-desc", {
+                    width: "100%",
+                    height: 600,
+                    emoji: true,
+                    path: "/lib/"
+                });
+
+                editormd.loadScript("/languages/en", function () {
+                    testEditor.lang = editormd.defaults.lang;
+                    testEditor.recreate();
+                })
+            });
+        </script>
+
+        <!--Ez a külön container-be helyezett rész jeleníti meg a server multiselect-t, aminek a segítségével az adott service-hez hozzá tudunk erendelni egy vagy több servert.
+            class="col-md-4" / class="col-md-2" - ez a multiselect egyes egységeinek a formázáshoz szükséges osztálykijelölések
+            multiple="multiple - ezzel az attribútummal tesszük lehetővé select és imput esetében, hogy ne csak egy, hanem több elemet is ki lehessen jelölni/választani
+            th:id="'lstview' - erre az id-adásra azért van szükség, hgoy átadhassuk az elemet a keresésért felelős java-script-nek
+        -->
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <select name="from" th:id="'lstview'" class="form-control" size="8" multiple="multiple">
+
+                        <!--A ServiceControllerben az addService metódus a Model segítségével átadta ennek a html oldalnak a serverListInModel List-et, ami tartalmazza az összes Server adatát
+                            Ezen a listán iterálunk itt végig annak érdekében, hogy meg tudjuk jeleníteni választható opciókként az egyes servereket. A választható opciók a menthetőség érdekében
+                            server id-k lesznek, de megjeleníteni nem id-kat, hanem a hozzá tartozó neveket fogjuk, hiszen a user számára azok alapján kényelmesebb a választás.
+
+                            th:value="${server.serverId}" - az adott opció értéke (jelen esetben a serverId)
+                            th:text="${server.serverName}"  - az adott opció megjelenített neve (jelen esetben a serverName)
+
+                        -->
+
+                        <div th:each="server : ${serverListInModel}">
+                            <option th:value="${server.serverId}"><span th:text="${server.serverName}"></span></option>
+                        </div>
+                    </select>
+                </div>
+                <!--Ez a rész a multiselect közepe, ahol az át- és visszaadást jelképező gombok vannak piktogrammokkal a felületükön-->
+
+                <div class="col-md-2">
+                    <button type="button" th:id="lstview_rightAll" class="btn btn-default btn-block"><i
+                            class="glyphicon glyphicon-forward"></i>add all
+                    </button>
+                    <button type="button" th:id="lstview_rightSelected" class="btn btn-default btn-block"><i
+                            class="glyphicon glyphicon-chevron-right">add selected</i></button>
+                    <button type="button" th:id="lstview_leftSelected" class="btn btn-default btn-block"><i
+                            class="glyphicon glyphicon-chevron-left">remove selected</i></button>
+                    <button type="button" th:id="lstview_leftAll" class="btn btn-default btn-block"><i
+                            class="glyphicon glyphicon-backward"></i>remove all
+                    </button>
+                    <!--
+                        Ez a multiselect form túloldala, ahol az elmentésre kijelölt server-name-ek megjelennek majd (a gombok segítségével ezen a listán is lehet módosítani).
+                        th:id="lstview_to"
+                     -->
+                </div>
+                <div class="col-md-4">
+                    <select name="serverList" th:id="lstview_to" class="form-control" size="8" multiple="multiple">
+
+                    </select>
+                </div>
+            </div>
+        </div>
+        <!--Ez a script tartalmazza a keresőablakokat a multiselect két listája (választható / már kiválasztott) felett-->
+        <script type="text/javascript">
+            jQuery(document).ready(function ($) {
+                $('#lstview').multiselect({
+                    search: {
+                        left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                        right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                    }
+                });
+            });
+        </script>
+        <div class="modal-footer">
+            <!--A footer tartalmazza a save (primary) és a cancel (secondary) gombokat. A "button type = submit" felelős azért, hogy a form-ban rögzített adatok validálás után eljussanak
+            a server-oldalon futó form-kezelőhöz, ami feldolgozza a kapott adatokat.
+            data-dismiss="modal" - ???
+            onclick="javascript:window.location='../editservice' - cancel esetén az alkalmazás átdobja a user-t az /editservice oldalra
+            -->
+
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="javascript:window.location='../editservice'">Cancel</button>
+            <button type="submit" class="btn btn-primary" value="save" name="addServiceSaveBtn">Save</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>
